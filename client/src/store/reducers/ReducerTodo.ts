@@ -1,28 +1,29 @@
-
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
 import { Task } from "../../interface/index";
-export const getTask: any = createAsyncThunk("task/getAllTask", async () => {
+
+export const fetchTasks: any = createAsyncThunk("task/fetchAllTasks", async () => {
   const response = await axios.get("http://localhost:3000/tasks");
   return response.data;
 });
-const initialState: Task[] = [];
-export const addTask: any = createAsyncThunk("task/addTask", async (task) => {
+
+export const addTaskAction: any = createAsyncThunk("task/addTask", async (task) => {
   const response = await axios.post("http://localhost:3000/tasks", task);
   return response.data;
 });
 
-export const deletetask: any = createAsyncThunk(
-  "task/deletetask",
+export const deleteTaskAction: any = createAsyncThunk(
+  "task/deleteTask",
   async (id) => {
     await axios.delete(`http://localhost:3000/tasks/${id}`);
     return id;
   }
 );
-export const updatetask: any = createAsyncThunk(
-  "task/updatetask",
+
+export const updateTaskAction: any = createAsyncThunk(
+  "task/updateTask",
   async (task: Task) => {
-    axios.patch(`http://localhost:3000/tasks/${task.id}`, {
+    await axios.patch(`http://localhost:3000/tasks/${task.id}`, {
       text: task.name,
       completed: task.completed,
     });
@@ -30,41 +31,40 @@ export const updatetask: any = createAsyncThunk(
   }
 );
 
-const ReducerTodo = createSlice({
+const initialState: Task[] = [];
+
+const todoSlice = createSlice({
   name: "task",
   initialState: {
-    task: initialState,
+    tasks: initialState,
   },
   reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(getTask.pending, (state: any, action: any) => {
-        // chờ lấy dữ liệu
+      .addCase(fetchTasks.pending, (state, action) => {
+        // pending state for fetching tasks
       })
-      .addCase(getTask.fulfilled, (state, action) => {
-        //lấy dữ liệu thành công
-        state.task = action.payload;
+      .addCase(fetchTasks.fulfilled, (state, action) => {
+        // success state for fetching tasks
+        state.tasks = action.payload;
       })
-      .addCase(getTask.rejected, (state, action) => {
-        // thất bại khi lấy dữ liệu
+      .addCase(fetchTasks.rejected, (state, action) => {
+        // failure state for fetching tasks
       })
-      .addCase(addTask.fulfilled, (state, action) => {
-        state.task.push(action.payload);
+      .addCase(addTaskAction.fulfilled, (state, action) => {
+        state.tasks.push(action.payload);
       })
-      .addCase(deletetask.fulfilled, (state, action) => {
-        const taskToDelete = action.payload;
-        const updatedtasks = state.task.filter(
-          (task) => task.id !== taskToDelete
-        );
-        state.task = updatedtasks;
+      .addCase(deleteTaskAction.fulfilled, (state, action) => {
+        const taskIdToDelete = action.payload;
+        state.tasks = state.tasks.filter(task => task.id !== taskIdToDelete);
       })
-      .addCase(updatetask.fulfilled, (state, action) => {
-        const taskIdToUpdate = action.payload.id;
-        state.task = state.task.map((task) =>
-          task.id === taskIdToUpdate ? action.payload : task
+      .addCase(updateTaskAction.fulfilled, (state, action) => {
+        const updatedTask = action.payload;
+        state.tasks = state.tasks.map(task => 
+          task.id === updatedTask.id ? updatedTask : task
         );
       });
   },
 });
 
-export default ReducerTodo.reducer;
+export default todoSlice.reducer;

@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  addTask,
-  deletetask,
-  getTask,
-  updatetask,
+  addTask as addTaskAction,
+  deleteTask as deleteTaskAction,
+  getTask as fetchTasks,
+  updateTask as updateTaskAction,
 } from "../store/reducers/ReducerTodo";
 import { Task } from "../interface";
 
@@ -12,26 +12,28 @@ export default function TodoList() {
   const tasks = useSelector((state: any) => state.tasks.task);
   const dispatch = useDispatch();
   const [newTask, setNewTask] = useState("");
-  const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
-  const [showWarningModal, setShowWarningModal] = useState<boolean>(false);
+  const [isDeleteModalVisible, setDeleteModalVisible] =
+    useState<boolean>(false);
+  const [isWarningModalVisible, setWarningModalVisible] =
+    useState<boolean>(false);
   const [taskToDelete, setTaskToDelete] = useState<null | number>(null);
   const [editTaskId, setEditTaskId] = useState<null | number>(null);
-  const [editMode, setEditMode] = useState<boolean>(false);
+  const [isEditMode, setEditMode] = useState<boolean>(false);
   const [currentTab, setCurrentTab] = useState("all");
 
   useEffect(() => {
-    dispatch(getTask());
+    dispatch(fetchTasks());
   }, [dispatch]);
 
-  const handleAddTask = (e: React.FormEvent) => {
+  const handleTaskSubmission = (e: React.FormEvent) => {
     e.preventDefault();
     if (newTask.trim() === "") {
-      setShowWarningModal(true);
+      setWarningModalVisible(true);
       return;
     }
-    if (editMode) {
+    if (isEditMode) {
       dispatch(
-        updatetask({
+        updateTaskAction({
           id: editTaskId,
           name: newTask,
           completed: false,
@@ -40,23 +42,24 @@ export default function TodoList() {
       setEditMode(false);
       setEditTaskId(null);
     } else {
-      const addNewTask = {
+      const taskToAdd = {
         name: newTask,
         completed: false,
       };
-      dispatch(addTask(addNewTask));
+      dispatch(addTaskAction(taskToAdd));
     }
     setNewTask("");
   };
 
-  const handleDeleteTask = (taskId: number) => {
-    dispatch(deletetask(taskId));
-    setShowDeleteModal(false);
+  const handleTaskDeletion = (taskId: number) => {
+    dispatch(deleteTaskAction(taskId));
+    setDeleteModalVisible(false);
   };
 
-  const handleTabChange = (tab: string) => {
+  const handleTabSwitch = (tab: string) => {
     setCurrentTab(tab);
   };
+
   const filteredTasks = tasks.filter((task: Task) => {
     if (currentTab === "completed") {
       return task.completed;
@@ -76,7 +79,7 @@ export default function TodoList() {
                 <div className="card-body p-5">
                   <form
                     className="d-flex justify-content-center align-items-center mb-4"
-                    onSubmit={handleAddTask}
+                    onSubmit={handleTaskSubmission}
                   >
                     <div className="form-outline flex-fill">
                       <input
@@ -87,22 +90,23 @@ export default function TodoList() {
                         onChange={(e) => setNewTask(e.target.value)}
                       />
                       <label className="form-label" htmlFor="form2">
-                        {editMode ? "Cập nhật công việc" : "Nhập tên công việc"}
+                        {isEditMode
+                          ? "Cập nhật công việc"
+                          : "Nhập tên công việc"}
                       </label>
                     </div>
                     <button type="submit" className="btn btn-info ms-2">
-                      {editMode ? "Cập nhật" : "Thêm"}
+                      {isEditMode ? "Cập nhật" : "Thêm"}
                     </button>
                   </form>
 
-                  {/* Tabs navs */}
                   <ul className="nav nav-tabs mb-4 pb-2">
                     <li className="nav-item" role="presentation">
                       <a
                         className={`nav-link ${
                           currentTab === "all" ? "active" : ""
                         }`}
-                        onClick={() => handleTabChange("all")}
+                        onClick={() => handleTabSwitch("all")}
                       >
                         Tất cả
                       </a>
@@ -112,7 +116,7 @@ export default function TodoList() {
                         className={`nav-link ${
                           currentTab === "completed" ? "active" : ""
                         }`}
-                        onClick={() => handleTabChange("completed")}
+                        onClick={() => handleTabSwitch("completed")}
                       >
                         Đã hoàn thành
                       </a>
@@ -122,15 +126,13 @@ export default function TodoList() {
                         className={`nav-link ${
                           currentTab === "incomplete" ? "active" : ""
                         }`}
-                        onClick={() => handleTabChange("incomplete")}
+                        onClick={() => handleTabSwitch("incomplete")}
                       >
                         Chưa hoàn thành
                       </a>
                     </li>
                   </ul>
-                  {/* Tabs navs */}
 
-                  {/* Tabs content */}
                   <div className="tab-content" id="ex1-content">
                     <div className="tab-pane fade show active">
                       <ul className="list-group mb-0">
@@ -147,7 +149,7 @@ export default function TodoList() {
                                 checked={task.completed}
                                 onChange={() =>
                                   dispatch(
-                                    updatetask({
+                                    updateTaskAction({
                                       ...task,
                                       completed: !task.completed,
                                     })
@@ -173,7 +175,7 @@ export default function TodoList() {
                                 className="far fa-trash-can text-danger"
                                 onClick={() => {
                                   setTaskToDelete(task.id);
-                                  setShowDeleteModal(true);
+                                  setDeleteModalVisible(true);
                                 }}
                               ></i>
                             </div>
@@ -188,15 +190,15 @@ export default function TodoList() {
           </div>
         </div>
       </section>
-      {/* Modal xác nhận xóa */}
-      {showDeleteModal && (
+
+      {isDeleteModalVisible && (
         <div className="overlay">
           <div className="modal-custom">
             <div className="modal-header-custom">
               <h5>Xác nhận</h5>
               <i
                 className="fas fa-xmark"
-                onClick={() => setShowDeleteModal(false)}
+                onClick={() => setDeleteModalVisible(false)}
               ></i>
             </div>
             <div className="modal-body-custom">
@@ -205,14 +207,14 @@ export default function TodoList() {
             <div className="modal-footer-footer">
               <button
                 className="btn btn-light"
-                onClick={() => setShowDeleteModal(false)}
+                onClick={() => setDeleteModalVisible(false)}
               >
                 Hủy
               </button>
               <button
                 className="btn btn-danger"
                 onClick={() =>
-                  taskToDelete !== null && handleDeleteTask(taskToDelete)
+                  taskToDelete !== null && handleTaskDeletion(taskToDelete)
                 }
               >
                 Xóa
@@ -222,15 +224,14 @@ export default function TodoList() {
         </div>
       )}
 
-      {/* Modal cảnh báo lỗi */}
-      {showWarningModal && (
+      {isWarningModalVisible && (
         <div className="overlay">
           <div className="modal-custom">
             <div className="modal-header-custom">
               <h5>Cảnh báo</h5>
               <i
                 className="fas fa-xmark"
-                onClick={() => setShowWarningModal(false)}
+                onClick={() => setWarningModalVisible(false)}
               ></i>
             </div>
             <div className="modal-body-custom">
@@ -239,7 +240,7 @@ export default function TodoList() {
             <div className="modal-footer-footer">
               <button
                 className="btn btn-light"
-                onClick={() => setShowWarningModal(false)}
+                onClick={() => setWarningModalVisible(false)}
               >
                 Đóng
               </button>
